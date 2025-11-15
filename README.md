@@ -1,191 +1,199 @@
-# Cisco DHCP Relay Agent - Basic Configuration
+# Cisco DHCP Relay Agent — Simplified Configuration Guide
 
-📘 Complete documentation for configuring DHCP Relay Agent on Cisco devices using a single DHCP server. Includes basic concepts, network topology, and step-by-step configuration guide.
+A clear and concise guide for configuring a DHCP Relay Agent on Cisco routers. This version removes redundancy and focuses only on what you need to know.
 
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Network Topology](#network-topology)
-- [Prerequisites](#prerequisites)
-- [Configuration Steps](#configuration-steps)
-- [Verification](#verification)
-- [Troubleshooting](#troubleshooting)
+---
 
-## 🎯 Overview
+## 📘 Overview
 
-DHCP Relay Agent allows a router to forward DHCP requests from clients on one subnet to a DHCP server on a different subnet. This eliminates the need for a DHCP server on every network segment.
+DHCP Relay allows a router to **forward DHCP requests** from clients in one subnet to a DHCP server in another subnet. This lets you centralize your DHCP server instead of deploying one on every network.
 
-### Key Benefits:
-- Centralized DHCP server management
-- Reduced hardware costs
-- Simplified IP address management
-- Scalable network design
+### Why Use DHCP Relay?
+
+* Centralized IP management
+* Lower hardware/maintenance costs
+* Works across different subnets
+* Scales well for growing networks
+
+---
 
 ## 🗺️ Network Topology
 
-![Network Topology](./assets/topology.png)
+The setup includes:
 
-The topology consists of:
-- **DHCP Server**: Centralized server providing IP addresses
-- **Router**: Acts as DHCP Relay Agent using `ip helper-address`
-- **Clients**: End devices requesting IP addresses via DHCP
+* **DHCP Server** (central server)
+* **Cisco Router** acting as the relay using `ip helper-address`
+* **Client Devices** requesting IP addresses
+
+*(See `/assets/topology.png` for diagram)*
+
+---
 
 ## ✅ Prerequisites
 
-- Cisco router with IOS support for DHCP relay
-- Basic understanding of IP addressing and subnetting
-- Access to router CLI (Console/SSH/Telnet)
-- DHCP server configured and operational
+Before configuring, ensure you have:
 
-### Required Files:
-- Cisco Packet Tracer file: `cisco.pkt`
-- Network diagrams in `/assets/` folder
+* A Cisco IOS router that supports DHCP relay
+* A working DHCP server
+* Router CLI access (Console/SSH/Telnet)
+* Basic understanding of IP addressing
+
+Files provided:
+
+* `cisco.pkt` (Packet Tracer file)
+* `/assets/` screenshots
+
+---
 
 ## ⚙️ Configuration Steps
 
-### 1. DHCP Server Configuration
+### **1. Configure the DHCP Server**
 
-![DHCP Settings](./assets/dhcpset.png)
+Set up the DHCP pool with:
 
-Configure your DHCP server with:
-```
-- IP Pool range
-- Default gateway
-- DNS servers
-- Lease time
-```
+* IP address range
+* Default gateway
+* DNS servers
+* Lease duration
 
-### 2. Router CLI Configuration
+*(Reference: `/assets/dhcpset.png`)*
 
-![Router CLI](./assets/routercli.png)
+---
 
-Access the router and enter configuration mode:
+### **2. Access Router CLI**
 
 ```cisco
 Router> enable
 Router# configure terminal
 ```
 
-### 3. Configure IP Helper-Address
+---
 
-On the interface facing the client network:
+### **3. Configure DHCP Relay (ip helper-address)**
+
+On the client-facing interface:
 
 ```cisco
 Router(config)# interface GigabitEthernet0/0
 Router(config-if)# ip address 192.168.1.1 255.255.255.0
 Router(config-if)# ip helper-address 192.168.10.10
 Router(config-if)# no shutdown
-Router(config-if)# exit
 ```
 
-**Note**: Replace `192.168.10.10` with your DHCP server's IP address.
+Replace `192.168.10.10` with your actual DHCP server IP.
 
-### 4. Server Interface Configuration
+---
 
-![Server Configuration](./assets/servconf.png)
-
-Configure the interface connecting to the DHCP server:
+### **4. Configure Server-Side Interface**
 
 ```cisco
 Router(config)# interface GigabitEthernet0/1
 Router(config-if)# ip address 192.168.10.1 255.255.255.0
 Router(config-if)# no shutdown
-Router(config-if)# exit
 ```
 
-### 5. Save Configuration
+*(Reference: `/assets/servconf.png`)*
+
+---
+
+### **5. Save Configuration**
 
 ```cisco
-Router(config)# end
 Router# write memory
 ```
-or
+
+Or:
+
 ```cisco
 Router# copy running-config startup-config
 ```
 
+---
+
 ## ✔️ Verification
 
-### Check DHCP Relay Configuration
+### **Check Relay Status**
 
 ```cisco
-Router# show ip interface GigabitEthernet0/0
+show ip interface GigabitEthernet0/0
 ```
 
-Look for the line showing "Helper address is X.X.X.X"
+You should see:
+`Helper address is X.X.X.X`
 
-### Verify Client IP Assignment
+### **Verify Client IP Assignment**
 
-![Proof of Configuration](./assets/proof.png)
+Clients should receive:
 
-Check if clients successfully receive IP addresses:
-- Client should get IP from configured DHCP pool
-- Default gateway should be set correctly
-- DNS servers should be assigned
+* A correct IP from the DHCP pool
+* Default gateway
+* DNS server
 
-### Debug DHCP Packets
+*(See `/assets/proof.png` for example)*
+
+### **Debug DHCP Traffic**
 
 ```cisco
-Router# debug ip dhcp server packet
+debug ip dhcp server packet
 ```
+
+---
 
 ## 🔧 Troubleshooting
 
-### Common Issues:
+### **1. Clients Not Getting IP**
 
-1. **Clients not receiving IP addresses**
-   - Verify `ip helper-address` is configured correctly
-   - Check DHCP server is reachable: `ping [server-ip]`
-   - Ensure DHCP pool is not exhausted
+* Check `ip helper-address`
+* Ensure router can ping the DHCP server
+* Verify DHCP pool availability
 
-2. **Wrong subnet receiving addresses**
-   - Verify interface IP addressing
-   - Check routing between router and DHCP server
+### **2. Wrong Subnet Assigned**
 
-3. **DHCP relay not forwarding requests**
-   ```cisco
-   Router# show ip interface [interface-name]
-   Router# debug ip udp
-   ```
+* Confirm interface IPs
+* Check routing between subnets
 
-### Useful Commands:
+### **3. Relay Not Forwarding**
 
 ```cisco
-show running-config interface [interface-name]
+show ip interface [interface]
+debug ip udp
+```
+
+### Useful Commands
+
+```cisco
 show ip dhcp binding
+show running-config interface [interface]
 show ip dhcp server statistics
 clear ip dhcp binding *
 ```
+
+---
 
 ## 📁 Repository Structure
 
 ```
 .
 ├── README.md
-├── cisco.pkt                    # Packet Tracer simulation file
+├── cisco.pkt
 └── assets/
-    ├── dhcpset.png             # DHCP server settings
-    ├── proof.png               # Configuration proof/result
-    ├── routercli.png           # Router CLI configuration
-    ├── servconf.png            # Server configuration
-    └── topology.png            # Network topology diagram
+    ├── dhcpset.png
+    ├── proof.png
+    ├── routercli.png
+    ├── servconf.png
+    └── topology.png
 ```
-
-## 📝 Notes
-
-- DHCP relay uses UDP ports 67 (server) and 68 (client)
-- Multiple `ip helper-address` commands can be configured per interface
-- The relay agent adds Option 82 (Relay Agent Information) to DHCP packets
-- Ensure proper routing between all subnets
-
-## 🤝 Contributing
-
-Feel free to submit issues or pull requests to improve this documentation.
-
-## 📄 License
-
-This documentation is provided as-is for educational purposes.
 
 ---
 
-**Author**: [Maliq R.]  
-**Last Updated**: November 2025  
+## 📝 Notes
+
+* DHCP uses UDP ports 67 (server) and 68 (client)
+* Multiple relay addresses can be configured per interface
+* Relay may add DHCP Option 82 depending on platform
+* Ensure all subnets are properly routed
+
+---
+
+**Author:** Maliq R.
+**Last Updated:** November 2025
